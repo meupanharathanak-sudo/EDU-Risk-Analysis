@@ -29,6 +29,6 @@ streamlit run app.py
 
 ## Student Information
 
-- **Name:** Khann Udomvirak
+- **Name:** Meu panharathanak
 - **Student ID:** 
 - **Class:** 
