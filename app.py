@@ -1,28 +1,33 @@
+
 import streamlit as st
 import pandas as pd
 
-# Step 9: Set page configulation 
+# Step 1: Page configuration
 st.set_page_config(
-    page_title="EduRisk Analytics - Lab 03",
+    page_title="EduRisk Analytics - Lab 04",
     page_icon="🎓",
     layout="wide"
 )
 
-# Step 10: Remove the haed-coded student dataset
-# Step 11: Ass a csv loading function
+# Step 2: Initialize Session State
+if "risk_history" not in st.session_state:
+    st.session_state["risk_history"] = []
+
+# Step 3: Load student data from CSV
 def load_student_data():
     try:
         data = pd.read_csv("students.csv")
         return data
     except FileNotFoundError:
         st.error(
-            "students.csv was not found. Please place it in the same folder as app.py."
+            "students.csv was not found. "
+            "Please place it in the same folder as app.py."
         )
         st.stop()
-# Step 12: Load student data
+
 student_df = load_student_data()
 
-# Step 13: keep the risk level function 
+# Step 4: Risk classification function
 def get_risk_level(score, attendance):
     if score < 60 or attendance < 60:
         return "High Risk"
@@ -30,8 +35,8 @@ def get_risk_level(score, attendance):
         return "Medium Risk"
     else:
         return "Low Risk"
-    
-# Step 14: Add a risk level column 
+
+# Step 5: Add Risk Level column
 student_df["Risk Level"] = student_df.apply(
     lambda row: get_risk_level(
         row["Score"],
@@ -40,41 +45,41 @@ student_df["Risk Level"] = student_df.apply(
     axis=1
 )
 
-total_students = len(student_df)
-average_score = student_df["Score"].mean()
-average_attendance = student_df["Attendance"].mean()
-low_score_students = student_df[student_df["Score"] < 60].shape[0]
-
-# Step 15: Keep the sidebar navigation 
+# Step 6: Sidebar navigation
 with st.sidebar:
     st.title("EduRisk Menu")
     selected_page = st.radio(
         "Select Page",
         ["Home", "Dashboard", "Student Data", "Risk Checker", "About"]
     )
-# Step 16: Update the Home Page
+
+# Step 7: Home Page
 if selected_page == "Home":
     st.title("🎓 EduRisk Analytics")
-    st.subheader("Frontend Prototype with CSV Data Loading")
-    st.write("Welcome to Lab 03.")
+    st.subheader("Student Risk Monitoring System")
+
+    st.write("Welcome to Lab 04.")
+
     st.write(
-        "In this lab, the app loads student data from students.csv "
-        "using Pandas instead of storing data directly inside app.py."
+        "This application uses student data to monitor academic "
+        "performance and identify students who may need support."
     )
-    st.success("Lab 03 app is running successfully!")
-    
-# Step 17: Update the Dashboard Page
+
+    st.success("Lab 04 app is running successfully!")
+
+# Step 8: Dashboard Page
 elif selected_page == "Dashboard":
     st.title("Dashboard Prototype")
 
     st.write(
-        "This dashboard gives a quick overview of student performance "
+        "This dashboard provides an overview of student performance "
         "using data loaded from students.csv."
     )
 
     total_students = len(student_df)
     average_score = student_df["Score"].mean()
     average_attendance = student_df["Attendance"].mean()
+
     high_risk_students = student_df[
         student_df["Risk Level"] == "High Risk"
     ].shape[0]
@@ -90,13 +95,15 @@ elif selected_page == "Dashboard":
         st.metric("Average Score", round(average_score, 2))
 
     with col3:
-        st.metric("Average Attendance", f"{round(average_attendance, 2)}%")
+        st.metric(
+            "Average Attendance",
+            f"{round(average_attendance, 2)}%"
+        )
 
     with col4:
         st.metric("High Risk", high_risk_students)
 
     st.subheader("Student Records")
-    st.write("This table shows student data loaded from students.csv.")
     st.dataframe(student_df)
 
     st.subheader("Charts")
@@ -118,13 +125,11 @@ elif selected_page == "Dashboard":
         "not label or punish them."
     )
 
-# Step 18: Update the Student Data Page
+# Step 9: Student Data Page
 elif selected_page == "Student Data":
     st.title("Student Data")
 
-    st.write(
-        "This page displays and inspects the dataset loaded from students.csv."
-    )
+    st.write("Inspect the dataset loaded from students.csv.")
 
     st.subheader("Data Inspection")
 
@@ -139,49 +144,107 @@ elif selected_page == "Student Data":
     st.subheader("Full Student Dataset")
     st.dataframe(student_df)
 
-# Step 19: Keep the Risk Checker Page
+# Step 10: Risk Checker Page
 elif selected_page == "Risk Checker":
-    st.title("Single Student Risk Checker")
+    st.title("Student Risk Checker")
+
     st.write(
-        "Use this page to check the risk level of one student based on "
-        "score and attendance."
+        "Enter student information to check the risk level "
+        "based on score and attendance."
     )
 
+    # Create a form
     with st.form("risk_checker_form"):
         input_name = st.text_input("Student Name")
-        input_score = st.number_input("Score", 0, 100, 50)
-        input_attendance = st.number_input("Attendance", 0, 100, 50)
+
+        input_score = st.number_input(
+            "Score",
+            min_value=0,
+            max_value=100,
+            value=50
+        )
+
+        input_attendance = st.number_input(
+            "Attendance",
+            min_value=0,
+            max_value=100,
+            value=50
+        )
+
         submitted = st.form_submit_button("Check Risk")
 
+    # Validate and process form submission
     if submitted:
-        risk_result = get_risk_level(input_score, input_attendance)
 
-        st.write("Student Name:", input_name)
-        st.write("Score:", input_score)
-        st.write("Attendance:", input_attendance)
+        if input_name.strip() == "":
+            st.error("Please enter the student name.")
 
-        if risk_result == "Low Risk":
-            st.success("Risk Level: Low Risk")
-        elif risk_result == "Medium Risk":
-            st.warning("Risk Level: Medium Risk")
         else:
-            st.error("Risk Level: High Risk")
+            risk_result = get_risk_level(
+                input_score,
+                input_attendance
+            )
 
-# Step 20: Update the About Page
+            # Supportive feedback
+            if risk_result == "Low Risk":
+                feedback = "Student appears on track."
+                st.success(f"Risk Level: {risk_result}")
+
+            elif risk_result == "Medium Risk":
+                feedback = "Monitor progress and provide guidance."
+                st.warning(f"Risk Level: {risk_result}")
+
+            else:
+                feedback = "Student may need additional support."
+                st.error(f"Risk Level: {risk_result}")
+
+            st.write("Student Name:", input_name)
+            st.write("Score:", input_score)
+            st.write("Attendance:", input_attendance)
+            st.info(feedback)
+
+            # Save result in Session State
+            st.session_state["risk_history"].append({
+                "Student Name": input_name,
+                "Score": input_score,
+                "Attendance": input_attendance,
+                "Risk Level": risk_result,
+                "Feedback": feedback
+            })
+
+    # Recent Risk Checks
+    st.subheader("Recent Risk Checks")
+
+    if st.session_state["risk_history"]:
+        history_df = pd.DataFrame(
+            st.session_state["risk_history"]
+        )
+
+        st.dataframe(history_df, use_container_width=True)
+
+        if st.button("Clear History"):
+            st.session_state["risk_history"] = []
+            st.rerun()
+
+    else:
+        st.info("No risk checks have been recorded yet.")
+
+# Step 11: About Page
 else:
-    st.title("About")
+    st.title("About EduRisk Analytics")
 
-    st.write("This app is part of Lab 03.")
+    st.write("This application is part of Lab 04.")
+
     st.write("Course: Web App Development for Data Science")
     st.write("Project Theme: EduRisk Analytics")
-    st.write("Topic: Data Loading, Layout, and Frontend Prototype")
+    st.write("Topic: Forms, Validation, and Session State")
 
     st.info(
-        "This frontend prototype loads real data from students.csv "
-        "and displays it using Streamlit and Pandas."
+        "This application uses Streamlit forms, input validation, "
+        "and Session State to manage student risk-check results."
     )
 
     st.warning(
-        "Ethics Reminder: Student risk information should be used responsibly "
-        "to support learning and student success."
+        "Ethics Reminder: Student risk information should be used "
+        "responsibly to support learning and student success."
     )
